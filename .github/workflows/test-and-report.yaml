@@ -1,0 +1,126 @@
+name: test and report
+run-name: ci (${{ github.event_name }})
+on:
+  workflow_call:
+    inputs:
+      current-go-version:
+        default: "1.26"
+        type: string
+      previous-go-version:
+        default: "1.25"
+        type: string
+      os-list:
+        default: '["ubuntu-latest","macos-latest"]'
+        type: string
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        go-version:
+          - ${{ inputs.previous-go-version }}
+          - ${{ inputs.current-go-version }}
+        os: ${{ fromJson(inputs.os-list ) }}
+    env:
+      REPORT_FILE: /tmp/testreport-${{ matrix.go-version }}-${{ matrix.os }}.json
+      COVERAGE_FILE: /tmp/coverage-${{ matrix.go-version }}-${{ matrix.os }}.out
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd #v6
+      - uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 #v6
+        with:
+          go-version: ${{ matrix.go-version }}
+      - run: go test -coverprofile=${{ toJson(env.COVERAGE_FILE) }} -v -json ./... | tee ${{ toJson(env.REPORT_FILE) }}
+      - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f #v7
+        if: ${{ !cancelled() }}
+        name: coverage
+        with:
+          name: coverage-${{ matrix.go-version }}-${{ matrix.os }}
+          path: ${{ env.COVERAGE_FILE }}
+          compression-level: 3
+          overwrite: true
+      - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f #v7
+        if: ${{ !cancelled() }}
+        name: testreport
+        with:
+          name: testreport-${{ matrix.go-version }}-${{ matrix.os }}
+          path: ${{ env.REPORT_FILE }}
+          compression-level: 3
+          overwrite: true
+  convert-reports:
+    runs-on: ubuntu-slim
+    needs: test
+    outputs:
+      report-bundle: ${{ steps.report-bundle.outputs.artifact-id }}
+    steps:
+      - uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 #v6
+        with:
+          go-version: ${{ inputs.current-go-version }}
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8
+        with:
+          path: /tmp/artifacts/
+          merge-multiple: true
+          pattern: testreport-*
+      - run: |
+          go install gotest.tools/gotestsum@latest
+          find /tmp/artifacts/
+          for file in /tmp/artifacts/*.json
+          do
+            name=$(basename "$file")
+            gotestsum --junitfile /tmp/"$name".xml --raw-command cat "$file"
+          done
+      - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f #v7
+        id: report-bundle
+        with:
+          name: report-bundle
+          path: /tmp/*.xml
+          compression-level: 3
+          overwrite: true
+  present-reports:
+    runs-on: ubuntu-slim
+    needs: convert-reports
+    strategy:
+      fail-fast: false
+      matrix:
+        go-version:
+          - ${{ inputs.previous-go-version }}
+          - ${{ inputs.current-go-version }}
+        os: ${{ fromJson(inputs.os-list) }}
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8
+        with:
+          path: /tmp/artifacts/
+          name: report-bundle
+          # artifact-ids: ${{ needs.convert-reports.outputs.report-bundle }}
+      - uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 #v2
+        id: test-summary
+        with:
+          paths: /tmp/artifacts/testreport-${{ matrix.go-version }}-${{ matrix.os }}.json.xml
+      - run: "false"
+        if: ${{ steps.test-summary.outputs.failed > 0 }}
+  all-passed:
+    runs-on: ubuntu-slim
+    needs: present-reports
+    if: ${{ !cancelled() }}
+    steps:
+      - uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd #v8
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const run_id = context.runId;
+
+            const jobs = await github.paginate(github.rest.actions.listJobsForWorkflowRun, {
+              owner,
+              repo,
+              run_id,
+            });
+
+            core.debug(`jobs: ${JSON.stringify(jobs)}`);
+
+            const failed = jobs.filter(job =>
+              job.name.startsWith('test-and-report / present-reports') && job.conclusion === 'failure'
+            );
+
+            if (failed.length > 0) {
+              core.setFailed(`${failed.length} present-reports job(s) failed:\n${failed.map(j => `  - ${j.name}`).join('\n')}`);
+            }
