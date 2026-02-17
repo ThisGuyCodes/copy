@@ -4,7 +4,11 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"testing"
+	"time"
+
+	"github.com/thisguycodes/copy/reflink/testutils/ts"
 )
 
 // MountDiskImageMacOS creates a disk image with the specified filesystem type,
@@ -35,10 +39,22 @@ func MountDiskImageMacOS(t testing.TB, mountpoint, fsType string) {
 	}
 
 	// Register cleanup to unmount the disk after the test
+	// this may not be necessary since it seemse deleting the image and mount location does this automatically
 	t.Cleanup(func() {
-		unmountCmd := exec.Command("hdiutil", "detach", mountpoint)
-		if out, err := unmountCmd.CombinedOutput(); err != nil {
-			t.Errorf("failed to unmount disk image: %v, output: %s", err, string(out))
+		for attempt := range ts.Backoff(4, 100*time.Millisecond, time.Second) {
+			unmountCmd := exec.Command("hdiutil", "detach", mountpoint)
+			if out, err := unmountCmd.CombinedOutput(); err != nil {
+				if slices.Contains(retryableDetachExitCodes, unmountCmd.ProcessState.ExitCode()) {
+					t.Logf("failed to unmount disk image (attempt %d): %v, output: %s", attempt+1, err, string(out))
+					continue
+				}
+				t.Logf("failed to unmount disk image: %v, output: %s", err, string(out))
+				break
+			}
 		}
 	})
+}
+
+var retryableDetachExitCodes = []int{
+	16, // "resource busy"
 }

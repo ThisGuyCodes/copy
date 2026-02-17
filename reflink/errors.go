@@ -6,6 +6,8 @@ import (
 
 var ErrNotOnPlatform = errors.New("this function is not available on this platform")
 
+// ErrCanNotReflink is returned when a reflink operation fails, not due to platform support.
+// e.g. the source and destination are on different filesystems.
 type ErrCanNotReflink struct {
 	wrapped error
 }

@@ -11,6 +11,27 @@ import (
 	"github.com/thisguycodes/copy/reflink/testutils/ts"
 )
 
+func TestReflinkWithinAPFS(t *testing.T) {
+	ts.OnlyOn(t, "darwin_")
+	t.Parallel()
+
+	apfsMount := t.TempDir()
+	createmount.MountDiskImageMacOS(t, apfsMount, "APFS")
+
+	fileName := filepath.Join(apfsMount, "test.txt")
+
+	ts.NoErr(0, os.WriteFile(fileName, []byte("Hello, World!"), 0o644))(t)
+
+	fromFD := ts.NoErr(os.Open(fileName))(t)
+	toDirFD := ts.NoErr(os.Open(apfsMount))(t)
+	defer fromFD.Close()
+	defer toDirFD.Close()
+
+	toName := "test-reflink.txt"
+
+	ts.NoErr(0, reflink.Reflink(fromFD, toDirFD, toName))
+}
+
 func TestReflinkAcrossAPFS(t *testing.T) {
 	ts.OnlyOn(t, "darwin_")
 	t.Parallel()
