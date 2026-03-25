@@ -1,0 +1,11 @@
+name: ci
+run-name: ci (${{ github.event_name }})
+on:
+  pull_request:
+  workflow_call:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  test-and-report:
+    uses: ./.github/workflows/test-and-report.yaml

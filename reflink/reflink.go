@@ -11,14 +11,13 @@ import (
 
 func Reflink(from *os.File, toDir *os.File, toName string) error {
 	err := clonefile(from, toDir, toName)
-	if err == nil || err != ErrNotOnPlatform {
-		return err
+	if err == nil {
+		return nil
+	} else if errors.Is(err, ErrNotOnPlatform) {
+		return ioctlFileClone(from, toDir, toName)
 	}
-	err = ioctlFileClone(from, toDir, toName)
-	if err == nil || err != ErrNotOnPlatform {
-		return err
-	}
-	return ErrNotOnPlatform
+
+	return err
 }
 
 func ReflinkOrCopy(from *os.File, toDir *os.File, toName string) error {
@@ -27,7 +26,12 @@ func ReflinkOrCopy(from *os.File, toDir *os.File, toName string) error {
 		return err
 	}
 
-	toFile, err := createFile(toDir, toName)
+	fromPerms, err := from.Stat()
+	if err != nil {
+		return err
+	}
+
+	toFile, err := createFile(toDir, toName, fromPerms.Mode())
 	doDeferClose := true
 	defer func() {
 		if doDeferClose {
@@ -42,7 +46,7 @@ func ReflinkOrCopy(from *os.File, toDir *os.File, toName string) error {
 	return errors.Join(copyErr, closeErr)
 }
 
-func ReflinkOrCopyAfero(fs afero.Fs, from, toName string) (joinErr error) {
+func ReflinkOrCopyAfero(fs afero.Fs, from, to string) (joinErr error) {
 	var fromFileCloseErr error
 	var toFileCloseErr error
 	var toDirCloseErr error
@@ -60,7 +64,7 @@ func ReflinkOrCopyAfero(fs afero.Fs, from, toName string) (joinErr error) {
 		fromFileCloseErr = fromFile.Close()
 	}()
 
-	toDir := filepath.Dir(toName)
+	toDir := filepath.Dir(to)
 	toDirFile, runningErr := fs.Open(toDir)
 	if runningErr != nil {
 		return
@@ -73,12 +77,12 @@ func ReflinkOrCopyAfero(fs afero.Fs, from, toName string) (joinErr error) {
 	toDirOSFile, toDirIsOs := toDirFile.(*os.File)
 
 	if fromIsOs && toDirIsOs {
-		runningErr = ReflinkOrCopy(fromOSFile, toDirOSFile, toName)
+		runningErr = ReflinkOrCopy(fromOSFile, toDirOSFile, to)
 		return
 	}
 
-	fullToName := filepath.Join(toDirFile.Name(), toName)
-	toFile, runningErr := fs.OpenFile(fullToName, os.O_CREATE|os.O_WRONLY|os.O_EXCL, 0644)
+	fullToName := filepath.Join(toDirFile.Name(), to)
+	toFile, runningErr := fs.OpenFile(fullToName, os.O_CREATE|os.O_WRONLY|os.O_EXCL, 0o644)
 	if runningErr != nil {
 		return
 	}

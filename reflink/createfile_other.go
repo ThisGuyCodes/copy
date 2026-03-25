@@ -7,9 +7,9 @@ import (
 	"path/filepath"
 )
 
-func createFile(dir *os.File, name string) (*os.File, error) {
+func createFile(dir *os.File, name string, perms os.FileMode) (*os.File, error) {
 	fileName := filepath.Join(dir.Name(), name)
-	file, err := os.OpenFile(fileName, os.O_CREATE|os.O_WRONLY|os.O_EXCL, 0666)
+	file, err := os.OpenFile(fileName, os.O_CREATE|os.O_WRONLY|os.O_EXCL, perms)
 	if err != nil {
 		return nil, err
 	}
