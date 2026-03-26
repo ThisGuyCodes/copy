@@ -1,7 +1,6 @@
 package reflink_test
 
 import (
-	"errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -54,7 +53,7 @@ func TestReflinkOnDarwinAcrossAPFS(t *testing.T) {
 	toName := "test-reflink.txt"
 
 	err := reflink.Reflink(fromFD, toDirFD, toName)
-	ts.True(errors.Is(err, reflink.ErrCanNotReflink{}))(t)
+	ts.IsErr(t, err, reflink.ErrCanNotReflink{})
 }
 
 func TestReflinkOnDarwinWithinExFAT(t *testing.T) {
@@ -76,5 +75,49 @@ func TestReflinkOnDarwinWithinExFAT(t *testing.T) {
 	toName := "test-reflink.txt"
 
 	err := reflink.Reflink(fromFD, toDirFD, toName)
-	ts.True(errors.Is(err, reflink.ErrCanNotReflink{}))(t)
+	ts.IsErr(t, err, reflink.ErrCanNotReflink{})
+}
+
+func TestReflinkOnLinuxWithinXFS(t *testing.T) {
+	ts.OnlyOn(t, "linux_")
+	t.Parallel()
+
+	xfsMount := t.TempDir()
+	createmount.MountDiskImageLinux(t, xfsMount, "xfs")
+
+	fileName := filepath.Join(xfsMount, "test.txt")
+
+	ts.NoErr(0, os.WriteFile(fileName, []byte("Hello, World!"), 0o644))(t)
+
+	fromFD := ts.NoErr(os.Open(fileName))(t)
+	toDirFD := ts.NoErr(os.Open(xfsMount))(t)
+	defer ts.NoErr(0, fromFD.Close())(t)
+	defer ts.NoErr(0, toDirFD.Close())(t)
+
+	toName := "test-reflink.txt"
+
+	err := reflink.Reflink(fromFD, toDirFD, toName)
+	ts.IsErr(t, err, reflink.ErrNotOnPlatform)
+}
+
+func TestReflinkOnLinuxWithinEXT4(t *testing.T) {
+	ts.OnlyOn(t, "linux_")
+	t.Parallel()
+
+	ext4Mount := t.TempDir()
+	createmount.MountDiskImageLinux(t, ext4Mount, "ext4")
+
+	fileName := filepath.Join(ext4Mount, "test.txt")
+
+	ts.NoErr(0, os.WriteFile(fileName, []byte("Hello, World!"), 0o644))(t)
+
+	fromFD := ts.NoErr(os.Open(fileName))(t)
+	toDirFD := ts.NoErr(os.Open(ext4Mount))(t)
+	defer ts.NoErr(0, fromFD.Close())(t)
+	defer ts.NoErr(0, toDirFD.Close())(t)
+
+	toName := "test-reflink.txt"
+
+	err := reflink.Reflink(fromFD, toDirFD, toName)
+	ts.IsErr(t, err, reflink.ErrNotOnPlatform)
 }
