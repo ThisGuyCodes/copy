@@ -1,0 +1,4 @@
+[tools]
+golangci-lint = "2.9.0"
+gotestsum = "latest"
+pre-commit = "4.2.0"
