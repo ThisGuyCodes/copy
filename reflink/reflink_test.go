@@ -11,7 +11,7 @@ import (
 	"github.com/thisguycodes/copy/reflink/testutils/ts"
 )
 
-func TestReflinkWithinAPFS(t *testing.T) {
+func TestReflinkOnDarwinWithinAPFS(t *testing.T) {
 	ts.OnlyOn(t, "darwin_")
 	t.Parallel()
 
@@ -32,7 +32,7 @@ func TestReflinkWithinAPFS(t *testing.T) {
 	ts.NoErr(0, reflink.Reflink(fromFD, toDirFD, toName))
 }
 
-func TestReflinkAcrossAPFS(t *testing.T) {
+func TestReflinkOnDarwinAcrossAPFS(t *testing.T) {
 	ts.OnlyOn(t, "darwin_")
 	t.Parallel()
 
@@ -57,7 +57,7 @@ func TestReflinkAcrossAPFS(t *testing.T) {
 	ts.True(errors.Is(err, reflink.ErrCanNotReflink{}))(t)
 }
 
-func TestReflinkWithinExFAT(t *testing.T) {
+func TestReflinkOnDarwinWithinExFAT(t *testing.T) {
 	ts.OnlyOn(t, "darwin_")
 	t.Parallel()
 
