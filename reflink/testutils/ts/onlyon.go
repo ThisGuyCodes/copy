@@ -7,6 +7,8 @@ import (
 )
 
 func OnlyOn(t testing.TB, platforms ...string) {
+	t.Helper()
+
 	thisPlatform := runtime.GOOS + "_" + runtime.GOARCH
 
 	for _, platform := range platforms {
