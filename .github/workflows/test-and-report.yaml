@@ -29,6 +29,9 @@ jobs:
       - uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 #v6
         with:
           go-version: ${{ matrix.go-version }}
+      - name: Setup tmate session
+        if: ${{ runner.debug == '1' }}
+        uses: mxschmitt/action-tmate@c0afd6f790e3a5564914980036ebf83216678101 #v3
       - run: go test -coverprofile=${{ toJson(env.COVERAGE_FILE) }} -v -json ./... | tee ${{ toJson(env.REPORT_FILE) }}
       - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f #v7
         if: ${{ !cancelled() }}

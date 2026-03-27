@@ -1,15 +1,21 @@
+// Package createmount provides utilities for creating and mounting disk images for testing
 package createmount
 
 import (
+	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 	"slices"
+	"strconv"
 	"testing"
 	"time"
 
 	"github.com/thisguycodes/copy/reflink/testutils/ts"
 )
+
+// calculate imageSizeMB for the image (e.g., 500MB)
+const imageSizeMB = 512
 
 // MountDiskImageMacOS creates a disk image with the specified filesystem type,
 // mounts it, and registers cleanup on the provided testing.TB.
@@ -23,11 +29,8 @@ func MountDiskImageMacOS(t testing.TB, mountpoint, fsType string) {
 	// Create the disk image file path in the temp directory managed by TB
 	imagePath := filepath.Join(t.TempDir(), "test_image.sparseimage")
 
-	// Calculate size for the image (e.g., 500MB)
-	const size = "512m"
-
 	// Create the disk image file
-	cmd := exec.Command("hdiutil", "create", "-size", size, "-fs", fsType, "-volname", "TestVolume", "-type", "SPARSE", "-quiet", imagePath)
+	cmd := exec.Command("hdiutil", "create", "-size", strconv.Itoa(imageSizeMB)+"m", "-fs", fsType, "-volname", "TestVolume", "-type", "SPARSE", "-quiet", imagePath)
 	if out, err := cmd.CombinedOutput(); err != nil {
 		t.Fatalf("failed to create disk image: %v, output: %s", err, string(out))
 	}
@@ -57,4 +60,37 @@ func MountDiskImageMacOS(t testing.TB, mountpoint, fsType string) {
 
 var retryableDetachExitCodes = []int{
 	16, // "resource busy"
+}
+
+func MountDiskImageLinux(t testing.TB, mountpoint, fsType string) {
+	t.Helper()
+
+	imagePath := filepath.Join(t.TempDir(), "test_image.img")
+
+	imageFile := ts.NoErr(os.OpenFile(imagePath, os.O_CREATE|os.O_EXCL|os.O_RDWR, 0o644))(t)
+
+	ts.NoErr(0, imageFile.Truncate(imageSizeMB*1024*1024))(t)
+	ts.NoErr(0, imageFile.Close())(t)
+
+	mkfsCmd := exec.Command("mkfs.xfs", imagePath)
+	if out, err := mkfsCmd.CombinedOutput(); err != nil {
+		t.Fatalf("failed to create xfs filesystem on disk image: %v, output: %s", err, string(out))
+	}
+
+	mountCmd := exec.Command("sudo", "mount", "-o", "loop", "-t", "xfs", imagePath, mountpoint)
+	if out, err := mountCmd.CombinedOutput(); err != nil {
+		t.Fatalf("failed to mount disk image: %v, output: %s", err, string(out))
+	}
+
+	chownCmd := exec.Command("sudo", "chown", strconv.Itoa(os.Getuid())+":"+strconv.Itoa(os.Getgid()), mountpoint)
+	if out, err := chownCmd.CombinedOutput(); err != nil {
+		t.Fatalf("failed to chown mountpoint: %v, output: %s", err, string(out))
+	}
+
+	t.Cleanup(func() {
+		unmountCmd := exec.Command("sudo", "umount", mountpoint)
+		if out, err := unmountCmd.CombinedOutput(); err != nil {
+			t.Logf("failed to unmount disk image: %v, output: %s", err, string(out))
+		}
+	})
 }

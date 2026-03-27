@@ -1,4 +1,6 @@
 [tools]
+go = "1.26.1"
+"go:golang.org/x/tools/gopls" = "0.21.1"
 golangci-lint = "2.9.0"
 gotestsum = "latest"
 pre-commit = "4.2.0"

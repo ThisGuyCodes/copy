@@ -10,14 +10,8 @@ import (
 )
 
 func Reflink(from *os.File, toDir *os.File, toName string) error {
-	err := clonefile(from, toDir, toName)
-	if err == nil {
-		return nil
-	} else if errors.Is(err, ErrNotOnPlatform) {
-		return ioctlFileClone(from, toDir, toName)
-	}
-
-	return err
+	// indirection is so we can add other platform specific options later
+	return clonefile(from, toDir, toName)
 }
 
 func ReflinkOrCopy(from *os.File, toDir *os.File, toName string) error {
@@ -32,6 +26,10 @@ func ReflinkOrCopy(from *os.File, toDir *os.File, toName string) error {
 	}
 
 	toFile, err := createFile(toDir, toName, fromPerms.Mode())
+	if err != nil {
+		return err
+	}
+
 	doDeferClose := true
 	defer func() {
 		if doDeferClose {
@@ -39,6 +37,8 @@ func ReflinkOrCopy(from *os.File, toDir *os.File, toName string) error {
 		}
 	}()
 
+	// on linux Go automatically uses copy_file_range, which internally will
+	// use reflink if the file system supports it
 	_, copyErr := io.Copy(toFile, from)
 	doDeferClose = false
 	closeErr := toFile.Close()

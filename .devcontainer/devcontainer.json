@@ -1,0 +1,41 @@
+{
+  "name": "copy",
+  "runArgs": [
+    "--cap-add=CAP_MKNOD",
+    "--cap-add=SYS_ADMIN",
+    "--device=/dev/loop0",
+    "--device=/dev/loop1",
+    "--device=/dev/loop2",
+    "--device=/dev/loop3",
+    "--device=/dev/loop4",
+    "--device=/dev/loop5",
+    "--device=/dev/loop6",
+    "--device=/dev/loop-control",
+    "--privileged=true",
+  ],
+  "build": {
+    "context": "..",
+    "dockerfile": "Dockerfile",
+  },
+  "mounts": [
+    {
+      "source": "mise-data-volume",
+      "target": "/mnt/mise-data",
+      "type": "volume",
+    },
+    {
+      "source": "go-caches",
+      "target": "/mnt/go-caches",
+      "type": "volume",
+    },
+  ],
+  "containerEnv": {
+    "MISE_DATA_DIR": "/mnt/mise-data",
+    "GOMODCACHE": "/mnt/go-caches/mod",
+    "GOCACHE": "/mnt/go-caches/build",
+  },
+  "remoteEnv": {
+    "PATH": "${containerEnv:PATH}:/mnt/mise-data/shims",
+  },
+  "postCreateCommand": ".devcontainer/postCreate.sh",
+}

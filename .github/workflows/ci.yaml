@@ -27,24 +27,26 @@ jobs:
             this_branch=${{ toJSON(github.head_ref) }}
           fi
           git fetch origin "$base_branch" --depth=1
-          if ! git merge-base --is-ancestor origin/"$base_branch" HEAD; then
+          if git merge-base --is-ancestor origin/"$base_branch" HEAD; then
             # literraly one commit ahead of the base
             true
           else
             # fetch our branch's history up to the base
             git fetch origin "$this_branch" --shallow-exclude="$base_branch"
+            # make sure we have the common ancestor
+            git fetch origin "$this_branch" --deepen=1
           fi
           if git merge-base --is-ancestor origin/"$base_branch" HEAD; then
             # base is in our history, i.e. base has not advanced past us
-            start_ref="$base_branch"
+            true
           else
             # base is not in our history, i.e. base has advanced past us
             # fetch the base branch history up to our branch
             git fetch origin "$base_branch" --shallow-exclude="$this_branch"
             # fetch the common ancestor
-            git fetch origin "$this_branch" --deepen=1
-            start_ref="$(git merge-base origin/"$base_branch" HEAD)"
+            git fetch origin "$base_branch" --deepen=1
           fi
+          start_ref="$(git merge-base origin/"$base_branch" HEAD)"
           echo "start_ref=$start_ref" >> $GITHUB_OUTPUT
       - uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 #v6
         with:
