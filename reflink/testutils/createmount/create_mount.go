@@ -1,3 +1,4 @@
+// Package createmount provides utilities for creating and mounting disk images for testing
 package createmount
 
 import (

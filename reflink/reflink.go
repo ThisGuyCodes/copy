@@ -26,6 +26,10 @@ func ReflinkOrCopy(from *os.File, toDir *os.File, toName string) error {
 	}
 
 	toFile, err := createFile(toDir, toName, fromPerms.Mode())
+	if err != nil {
+		return err
+	}
+
 	doDeferClose := true
 	defer func() {
 		if doDeferClose {
