@@ -25,7 +25,10 @@ func ReflinkOrCopy(from *os.File, toDir *os.File, toName string) (bool, error) {
 	if err != nil {
 		wasReflinked = false
 	}
-	if err == nil || err != ErrNotOnPlatform {
+	if err == nil {
+		return wasReflinked, err
+	}
+	if !errors.Is(err, ErrNotOnPlatform) && !errors.Is(err, ErrCanNotReflink{}) {
 		return wasReflinked, err
 	}
 
