@@ -100,3 +100,27 @@ func TestReflinkOrCopyOnLinuxWithinXFS(t *testing.T) {
 	didReflink := ts.NoErr(reflink.ReflinkOrCopy(fromFD, toDirFD, toName))(t)
 	ts.Is(true)(t, didReflink)
 }
+
+func TestReflinkOrCopyOnLinuxAcrossXFS(t *testing.T) {
+	ts.OnlyOn(t, "linux_")
+	t.Parallel()
+
+	xfsMount1 := t.TempDir()
+	createmount.MountDiskImageLinux(t, xfsMount1, "xfs")
+	xfsMount2 := t.TempDir()
+	createmount.MountDiskImageLinux(t, xfsMount2, "xfs")
+
+	fileName := filepath.Join(xfsMount1, "test.txt")
+
+	ts.NoErr(0, os.WriteFile(fileName, []byte("Hello, World!"), 0o644))(t)
+
+	fromFD := ts.NoErr(os.Open(fileName))(t)
+	toDirFD := ts.NoErr(os.Open(xfsMount2))(t)
+	defer fromFD.Close()  // nolint:errcheck
+	defer toDirFD.Close() // nolint:errcheck
+
+	toName := "test-reflink.txt"
+
+	didReflink := ts.NoErr(reflink.ReflinkOrCopy(fromFD, toDirFD, toName))(t)
+	ts.Is(false)(t, didReflink)
+}
