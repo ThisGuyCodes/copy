@@ -56,3 +56,25 @@ func TestReflinkOrCopyOnDarwinAcrossAPFS(t *testing.T) {
 	didReflink := ts.NoErr(reflink.ReflinkOrCopy(fromFD, toDirFD, toName))(t)
 	ts.Is(false)(t, didReflink)
 }
+
+func TestReflinkOrCopyOnDarwinWithinExFAT(t *testing.T) {
+	ts.OnlyOn(t, "darwin_")
+	t.Parallel()
+
+	exfatMount := t.TempDir()
+	createmount.MountDiskImageMacOS(t, exfatMount, "ExFAT")
+
+	fileName := filepath.Join(exfatMount, "test.txt")
+
+	ts.NoErr(0, os.WriteFile(fileName, []byte("Hello, World!"), 0o644))(t)
+
+	fromFD := ts.NoErr(os.Open(fileName))(t)
+	toDirFD := ts.NoErr(os.Open(exfatMount))(t)
+	defer fromFD.Close()  // nolint:errcheck
+	defer toDirFD.Close() // nolint:errcheck
+
+	toName := "test-reflink.txt"
+
+	didReflink := ts.NoErr(reflink.ReflinkOrCopy(fromFD, toDirFD, toName))(t)
+	ts.Is(false)(t, didReflink)
+}
