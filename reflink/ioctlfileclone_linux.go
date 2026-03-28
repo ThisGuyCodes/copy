@@ -3,7 +3,6 @@
 package reflink
 
 import (
-	"fmt"
 	"os"
 	"syscall"
 
@@ -34,8 +33,6 @@ func ioctlFileClone(from *os.File, toDir *os.File, toName string) error {
 	if err != nil {
 		return err
 	}
-
-	fmt.Println("butts")
 
 	return toFile.Close()
 }
