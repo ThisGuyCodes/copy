@@ -11,7 +11,12 @@ import (
 
 func Reflink(from *os.File, toDir *os.File, toName string) error {
 	// indirection is so we can add other platform specific options later
-	return clonefile(from, toDir, toName)
+	err := clonefile(from, toDir, toName)
+	if err == nil || err != ErrNotOnPlatform {
+		return err
+	}
+
+	return ioctlFileClone(from, toDir, toName)
 }
 
 func ReflinkOrCopy(from *os.File, toDir *os.File, toName string) (bool, error) {
