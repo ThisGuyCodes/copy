@@ -23,8 +23,8 @@ func TestReflinkOnDarwinWithinAPFS(t *testing.T) {
 
 	fromFD := ts.NoErr(os.Open(fileName))(t)
 	toDirFD := ts.NoErr(os.Open(apfsMount))(t)
-	defer fromFD.Close()
-	defer toDirFD.Close()
+	defer fromFD.Close()  // nolint:errcheck
+	defer toDirFD.Close() // nolint:errcheck
 
 	toName := "test-reflink.txt"
 
@@ -47,8 +47,8 @@ func TestReflinkOnDarwinAcrossAPFS(t *testing.T) {
 
 	fromFD := ts.NoErr(os.Open(fileName))(t)
 	toDirFD := ts.NoErr(os.Open(apfsMount2))(t)
-	defer fromFD.Close()
-	defer toDirFD.Close()
+	defer fromFD.Close()  // nolint:errcheck
+	defer toDirFD.Close() // nolint:errcheck
 
 	toName := "test-reflink.txt"
 
@@ -69,8 +69,8 @@ func TestReflinkOnDarwinWithinExFAT(t *testing.T) {
 
 	fromFD := ts.NoErr(os.Open(fileName))(t)
 	toDirFD := ts.NoErr(os.Open(exfatMount))(t)
-	defer fromFD.Close()
-	defer toDirFD.Close()
+	defer fromFD.Close()  // nolint:errcheck
+	defer toDirFD.Close() // nolint:errcheck
 
 	toName := "test-reflink.txt"
 
@@ -91,13 +91,12 @@ func TestReflinkOnLinuxWithinXFS(t *testing.T) {
 
 	fromFD := ts.NoErr(os.Open(fileName))(t)
 	toDirFD := ts.NoErr(os.Open(xfsMount))(t)
-	defer ts.NoErr(0, fromFD.Close())(t)
-	defer ts.NoErr(0, toDirFD.Close())(t)
+	defer fromFD.Close()  // nolint:errcheck
+	defer toDirFD.Close() // nolint:errcheck
 
 	toName := "test-reflink.txt"
 
-	err := reflink.Reflink(fromFD, toDirFD, toName)
-	ts.IsErr(t, err, reflink.ErrNotOnPlatform)
+	ts.NoErr(0, reflink.Reflink(fromFD, toDirFD, toName))(t)
 }
 
 func TestReflinkOnLinuxWithinEXT4(t *testing.T) {
@@ -113,11 +112,11 @@ func TestReflinkOnLinuxWithinEXT4(t *testing.T) {
 
 	fromFD := ts.NoErr(os.Open(fileName))(t)
 	toDirFD := ts.NoErr(os.Open(ext4Mount))(t)
-	defer ts.NoErr(0, fromFD.Close())(t)
-	defer ts.NoErr(0, toDirFD.Close())(t)
+	defer fromFD.Close()  // nolint:errcheck
+	defer toDirFD.Close() // nolint:errcheck
 
 	toName := "test-reflink.txt"
 
 	err := reflink.Reflink(fromFD, toDirFD, toName)
-	ts.IsErr(t, err, reflink.ErrNotOnPlatform)
+	ts.IsErr(t, err, reflink.ErrCanNotReflink{})
 }

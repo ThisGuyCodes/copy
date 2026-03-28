@@ -22,7 +22,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	err := reflink.ReflinkOrCopyAfero(fs, "big.file", "alsobig.file")
+	_, err := reflink.ReflinkOrCopyAfero(fs, "big.file", "alsobig.file")
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)

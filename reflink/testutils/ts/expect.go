@@ -2,6 +2,7 @@ package ts
 
 import (
 	"errors"
+	"reflect"
 	"syscall"
 	"testing"
 )
@@ -22,6 +23,16 @@ func True(ret bool) func(t testing.TB) bool {
 		t.Helper()
 		if !ret {
 			t.Fatalf("expected true, got false")
+		}
+		return ret
+	}
+}
+
+func Is[T any](ret T) func(t testing.TB, actual T) T {
+	return func(t testing.TB, actual T) T {
+		t.Helper()
+		if !reflect.DeepEqual(actual, ret) {
+			t.Fatalf("expected %v, got %v", ret, actual)
 		}
 		return ret
 	}

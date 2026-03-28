@@ -23,5 +23,6 @@ func Copy(from, to string) error {
 
 	toFile := filepath.Base(to)
 
-	return reflink.ReflinkOrCopy(fromFile, toDirFile, toFile)
+	_, err = reflink.ReflinkOrCopy(fromFile, toDirFile, toFile)
+	return err
 }

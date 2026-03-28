@@ -11,29 +11,38 @@ import (
 
 func Reflink(from *os.File, toDir *os.File, toName string) error {
 	// indirection is so we can add other platform specific options later
-	return clonefile(from, toDir, toName)
-}
-
-func ReflinkOrCopy(from *os.File, toDir *os.File, toName string) error {
-	err := Reflink(from, toDir, toName)
+	err := clonefile(from, toDir, toName)
 	if err == nil || err != ErrNotOnPlatform {
 		return err
 	}
 
+	return ioctlFileClone(from, toDir, toName)
+}
+
+func ReflinkOrCopy(from *os.File, toDir *os.File, toName string) (bool, error) {
+	wasReflinked := true
+	err := Reflink(from, toDir, toName)
+	if err != nil {
+		wasReflinked = false
+	}
+	if err == nil || err != ErrNotOnPlatform {
+		return wasReflinked, err
+	}
+
 	fromPerms, err := from.Stat()
 	if err != nil {
-		return err
+		return wasReflinked, err
 	}
 
 	toFile, err := createFile(toDir, toName, fromPerms.Mode())
 	if err != nil {
-		return err
+		return wasReflinked, err
 	}
 
 	doDeferClose := true
 	defer func() {
 		if doDeferClose {
-			toFile.Close()
+			toFile.Close() // nolint:errcheck
 		}
 	}()
 
@@ -43,10 +52,10 @@ func ReflinkOrCopy(from *os.File, toDir *os.File, toName string) error {
 	doDeferClose = false
 	closeErr := toFile.Close()
 
-	return errors.Join(copyErr, closeErr)
+	return wasReflinked, errors.Join(copyErr, closeErr)
 }
 
-func ReflinkOrCopyAfero(fs afero.Fs, from, to string) (joinErr error) {
+func ReflinkOrCopyAfero(fs afero.Fs, from, to string) (wasReflinked bool, joinErr error) {
 	var fromFileCloseErr error
 	var toFileCloseErr error
 	var toDirCloseErr error
@@ -77,7 +86,7 @@ func ReflinkOrCopyAfero(fs afero.Fs, from, to string) (joinErr error) {
 	toDirOSFile, toDirIsOs := toDirFile.(*os.File)
 
 	if fromIsOs && toDirIsOs {
-		runningErr = ReflinkOrCopy(fromOSFile, toDirOSFile, to)
+		wasReflinked, runningErr = ReflinkOrCopy(fromOSFile, toDirOSFile, to)
 		return
 	}
 
