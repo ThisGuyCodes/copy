@@ -99,6 +99,30 @@ func TestReflinkOnLinuxWithinXFS(t *testing.T) {
 	ts.NoErr(0, reflink.Reflink(fromFD, toDirFD, toName))(t)
 }
 
+func TestReflinkOnLinuxAcrossXFS(t *testing.T) {
+	ts.OnlyOn(t, "linux_")
+	t.Parallel()
+
+	xfsMount1 := t.TempDir()
+	createmount.MountDiskImageLinux(t, xfsMount1, "xfs")
+	xfsMount2 := t.TempDir()
+	createmount.MountDiskImageLinux(t, xfsMount2, "xfs")
+
+	fileName := filepath.Join(xfsMount1, "test.txt")
+
+	ts.NoErr(0, os.WriteFile(fileName, []byte("Hello, World!"), 0o644))(t)
+
+	fromFD := ts.NoErr(os.Open(fileName))(t)
+	toDirFD := ts.NoErr(os.Open(xfsMount2))(t)
+	defer fromFD.Close()  // nolint:errcheck
+	defer toDirFD.Close() // nolint:errcheck
+
+	toName := "test-reflink.txt"
+
+	err := reflink.Reflink(fromFD, toDirFD, toName)
+	ts.IsErr(t, err, reflink.ErrCanNotReflink{})
+}
+
 func TestReflinkOnLinuxWithinEXT4(t *testing.T) {
 	ts.OnlyOn(t, "linux_")
 	t.Parallel()
