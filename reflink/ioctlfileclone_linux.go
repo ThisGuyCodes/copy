@@ -9,32 +9,31 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-func ioctlFileClone(from *os.File, toDir *os.File, toName string) error {
+func ioctlFileClone(from *os.File, toDir *os.File, toName string) (*os.File, error) {
 	fromFD := int(from.Fd())
 
 	fromInfo, err := from.Stat()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	toFile, err := createFile(toDir, toName, fromInfo.Mode())
 	if err != nil {
-		return err
+		return toFile, err
 	}
-	defer toFile.Close()
 	toFD := int(toFile.Fd())
 
 	err = unix.IoctlFileClone(toFD, fromFD)
 	if err, ok := err.(syscall.Errno); ok {
 		if _, ok := ioctlFileCloneNonRetryableErrors[err]; ok {
-			return ErrCanNotReflink{wrapped: err}
+			return toFile, ErrCanNotReflink{wrapped: err}
 		}
 	}
 	if err != nil {
-		return err
+		return toFile, err
 	}
 
-	return toFile.Close()
+	return nil, toFile.Close()
 }
 
 var ioctlFileCloneNonRetryableErrors = map[syscall.Errno]bool{

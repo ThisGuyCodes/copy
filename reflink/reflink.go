@@ -9,11 +9,11 @@ import (
 	"github.com/spf13/afero"
 )
 
-func Reflink(from *os.File, toDir *os.File, toName string) error {
+func Reflink(from *os.File, toDir *os.File, toName string) (*os.File, error) {
 	// indirection is so we can add other platform specific options later
 	err := clonefile(from, toDir, toName)
 	if err == nil || err != ErrNotOnPlatform {
-		return err
+		return nil, err
 	}
 
 	return ioctlFileClone(from, toDir, toName)
@@ -21,10 +21,12 @@ func Reflink(from *os.File, toDir *os.File, toName string) error {
 
 func ReflinkOrCopy(from *os.File, toDir *os.File, toName string) (bool, error) {
 	wasReflinked := true
-	err := Reflink(from, toDir, toName)
+	toFile, err := Reflink(from, toDir, toName)
 	if err != nil {
 		wasReflinked = false
 	}
+	defer toFile.Close() // nolint:errcheck
+
 	if err == nil {
 		return wasReflinked, err
 	}
@@ -36,10 +38,11 @@ func ReflinkOrCopy(from *os.File, toDir *os.File, toName string) (bool, error) {
 	if err != nil {
 		return wasReflinked, err
 	}
-
-	toFile, err := createFile(toDir, toName, fromPerms.Mode())
-	if err != nil {
-		return wasReflinked, err
+	if toFile == nil {
+		toFile, err = createFile(toDir, toName, fromPerms.Mode())
+		if err != nil {
+			return wasReflinked, err
+		}
 	}
 
 	doDeferClose := true
