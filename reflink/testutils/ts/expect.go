@@ -28,13 +28,13 @@ func True(ret bool) func(t testing.TB) bool {
 	}
 }
 
-func Is[T any](ret T) func(t testing.TB, actual T) T {
+func Is[T any](val T) func(t testing.TB, actual T) T {
 	return func(t testing.TB, actual T) T {
 		t.Helper()
-		if !reflect.DeepEqual(actual, ret) {
-			t.Fatalf("expected %v, got %v", ret, actual)
+		if !reflect.DeepEqual(actual, val) {
+			t.Fatalf("expected %v, got %v", val, actual)
 		}
-		return ret
+		return val
 	}
 }
 
