@@ -78,3 +78,25 @@ func TestReflinkOrCopyOnDarwinWithinExFAT(t *testing.T) {
 	didReflink := ts.NoErr(reflink.ReflinkOrCopy(fromFD, toDirFD, toName))(t)
 	ts.Is(false)(t, didReflink)
 }
+
+func TestReflinkOrCopyOnLinuxWithinXFS(t *testing.T) {
+	ts.OnlyOn(t, "linux_")
+	t.Parallel()
+
+	xfsMount := t.TempDir()
+	createmount.MountDiskImageLinux(t, xfsMount, "xfs")
+
+	fileName := filepath.Join(xfsMount, "test.txt")
+
+	ts.NoErr(0, os.WriteFile(fileName, []byte("Hello, World!"), 0o644))(t)
+
+	fromFD := ts.NoErr(os.Open(fileName))(t)
+	toDirFD := ts.NoErr(os.Open(xfsMount))(t)
+	defer fromFD.Close()  // nolint:errcheck
+	defer toDirFD.Close() // nolint:errcheck
+
+	toName := "test-reflink.txt"
+
+	didReflink := ts.NoErr(reflink.ReflinkOrCopy(fromFD, toDirFD, toName))(t)
+	ts.Is(true)(t, didReflink)
+}
