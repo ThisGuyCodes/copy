@@ -42,7 +42,7 @@ func ReflinkOrCopy(from *os.File, toDir *os.File, toName string) (bool, error) {
 	doDeferClose := true
 	defer func() {
 		if doDeferClose {
-			toFile.Close()
+			toFile.Close() // nolint:errcheck
 		}
 	}()
 
