@@ -11,7 +11,7 @@ import (
 
 func createFile(dir *os.File, name string, perms os.FileMode) (*os.File, error) {
 	dirFD := int(dir.Fd())
-	fd, err := unix.Openat(dirFD, name, unix.O_WRONLY|unix.O_CREAT|unix.O_EXCL, uint32(perms))
+	fd, err := unix.Openat(dirFD, name, unix.O_WRONLY|unix.O_CREAT|unix.O_EXCL|unix.O_NONBLOCK, uint32(perms))
 	if err != nil {
 		return nil, err
 	}
