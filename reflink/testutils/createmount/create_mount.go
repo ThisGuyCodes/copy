@@ -54,6 +54,8 @@ func MountDiskImageMacOS(t testing.TB, mountpoint, fsType string) {
 				}
 				t.Logf("failed to unmount disk image: %v, output: %s", err, string(out))
 				break
+			} else {
+				break
 			}
 		}
 	})
