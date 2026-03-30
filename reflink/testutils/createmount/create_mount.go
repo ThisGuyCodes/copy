@@ -48,7 +48,7 @@ func MountDiskImageMacOS(t testing.TB, mountpoint, fsType string) {
 			unmountCmd := exec.Command("hdiutil", "detach", mountpoint)
 			if out, err := unmountCmd.CombinedOutput(); err != nil {
 				if slices.Contains(retryableDetachExitCodes, unmountCmd.ProcessState.ExitCode()) {
-					t.Logf("failed to unmount disk image (attempt %d): %v, output: %s", attempt+1, err, string(out))
+					t.Logf("warning: failed to unmount disk image (attempt %d): %v, output: %s", attempt+1, err, string(out))
 					t.Logf("if this was \"No such file or directory\", it may be safe to ignore as the test cleanup may have just deleted the file and mount point")
 					continue
 				}
@@ -89,9 +89,13 @@ func MountDiskImageLinux(t testing.TB, mountpoint, fsType string) {
 	}
 
 	t.Cleanup(func() {
-		unmountCmd := exec.Command("sudo", "umount", mountpoint)
-		if out, err := unmountCmd.CombinedOutput(); err != nil {
-			t.Logf("failed to unmount disk image: %v, output: %s", err, string(out))
+		for range ts.Backoff(5, 100*time.Millisecond, time.Second) {
+			unmountCmd := exec.Command("sudo", "umount", mountpoint)
+			if out, err := unmountCmd.CombinedOutput(); err != nil {
+				t.Logf("warning: failed to unmount disk image: %v, output: %s", err, string(out))
+			} else {
+				break
+			}
 		}
 	})
 }
