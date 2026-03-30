@@ -20,45 +20,21 @@ func Reflink(from *os.File, toDir *os.File, toName string) (*os.File, error) {
 }
 
 func ReflinkOrCopy(from *os.File, toDir *os.File, toName string) (bool, error) {
-	wasReflinked := true
 	toFile, err := Reflink(from, toDir, toName)
-	if err != nil {
-		wasReflinked = false
-	}
-	defer toFile.Close() // nolint:errcheck
 
 	if err == nil {
-		return wasReflinked, err
+		return true, toFile.Close()
 	}
 	if !errors.Is(err, ErrNotOnPlatform) && !errors.Is(err, ErrCanNotReflink{}) {
-		return wasReflinked, err
+		return false, errors.Join(err, toFile.Close())
 	}
-
-	fromPerms, err := from.Stat()
-	if err != nil {
-		return wasReflinked, err
-	}
-	if toFile == nil {
-		toFile, err = createFile(toDir, toName, fromPerms.Mode())
-		if err != nil {
-			return wasReflinked, err
-		}
-	}
-
-	doDeferClose := true
-	defer func() {
-		if doDeferClose {
-			toFile.Close() // nolint:errcheck
-		}
-	}()
 
 	// on linux Go automatically uses copy_file_range, which internally will
 	// use reflink if the file system supports it
 	_, copyErr := io.Copy(toFile, from)
-	doDeferClose = false
 	closeErr := toFile.Close()
 
-	return wasReflinked, errors.Join(copyErr, closeErr)
+	return false, errors.Join(copyErr, closeErr)
 }
 
 func ReflinkOrCopyAfero(fs afero.Fs, from, to string) (wasReflinked bool, joinErr error) {
