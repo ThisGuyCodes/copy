@@ -16,12 +16,16 @@ func Reflink(from *os.File, toDir *os.File, toName string) (*os.File, error) {
 		return nil, err
 	}
 
-	return ioctlFileClone(from, toDir, toName)
+	toFile, err := ioctlFileClone(from, toDir, toName)
+	if err == nil {
+		return nil, toFile.Close()
+	}
+	return toFile, err
 }
 
 func ReflinkOrCopy(from *os.File, toDir *os.File, toName string) (bool, error) {
 	toFile, err := Reflink(from, toDir, toName)
-	if toFile == nil {
+	if err != nil && toFile == nil {
 		perms, err := from.Stat()
 		if err != nil {
 			return false, err
@@ -33,7 +37,7 @@ func ReflinkOrCopy(from *os.File, toDir *os.File, toName string) (bool, error) {
 	}
 
 	if err == nil {
-		return true, toFile.Close()
+		return true, nil
 	}
 	if !errors.Is(err, ErrNotOnPlatform) && !errors.Is(err, ErrCanNotReflink{}) {
 		return false, errors.Join(err, toFile.Close())
