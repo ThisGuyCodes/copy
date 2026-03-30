@@ -24,6 +24,10 @@ func TestReflinkOrCopyOnDarwinWithinAPFS(t *testing.T) {
 	toName := "test-reflink.txt"
 
 	ts.NoErr(0, copy.Copy(fileName, filepath.Join(filepath.Dir(fileName), toName)))(t)
+
+	fromPerms := ts.NoErr(os.Stat(fileName))(t).Mode()
+	toPerms := ts.NoErr(os.Stat(filepath.Join(filepath.Dir(fileName), toName)))(t).Mode()
+	ts.Is(fromPerms)(t, toPerms)
 }
 
 func TestReflinkOrCopyOnDarwinAcrossAPFS(t *testing.T) {
@@ -43,6 +47,10 @@ func TestReflinkOrCopyOnDarwinAcrossAPFS(t *testing.T) {
 	toName := "test-reflink.txt"
 
 	ts.NoErr(0, copy.Copy(fileName, filepath.Join(filepath.Dir(fileName), toName)))(t)
+
+	fromPerms := ts.NoErr(os.Stat(fileName))(t).Mode()
+	toPerms := ts.NoErr(os.Stat(filepath.Join(filepath.Dir(fileName), toName)))(t).Mode()
+	ts.Is(fromPerms)(t, toPerms)
 }
 
 func TestReflinkOrCopyOnDarwinWithinExFAT(t *testing.T) {
@@ -59,6 +67,10 @@ func TestReflinkOrCopyOnDarwinWithinExFAT(t *testing.T) {
 	toName := "test-reflink.txt"
 
 	ts.NoErr(0, copy.Copy(fileName, filepath.Join(filepath.Dir(fileName), toName)))(t)
+
+	fromPerms := ts.NoErr(os.Stat(fileName))(t).Mode()
+	toPerms := ts.NoErr(os.Stat(filepath.Join(filepath.Dir(fileName), toName)))(t).Mode()
+	ts.Is(fromPerms)(t, toPerms)
 }
 
 func TestReflinkOrCopyOnLinuxWithinXFS(t *testing.T) {
@@ -75,6 +87,10 @@ func TestReflinkOrCopyOnLinuxWithinXFS(t *testing.T) {
 	toName := "test-reflink.txt"
 
 	ts.NoErr(0, copy.Copy(fileName, filepath.Join(filepath.Dir(fileName), toName)))(t)
+
+	fromPerms := ts.NoErr(os.Stat(fileName))(t).Mode()
+	toPerms := ts.NoErr(os.Stat(filepath.Join(filepath.Dir(fileName), toName)))(t).Mode()
+	ts.Is(fromPerms)(t, toPerms)
 }
 
 func TestReflinkOrCopyOnLinuxAcrossXFS(t *testing.T) {
@@ -93,6 +109,10 @@ func TestReflinkOrCopyOnLinuxAcrossXFS(t *testing.T) {
 	toName := "test-reflink.txt"
 
 	ts.NoErr(0, copy.Copy(fileName, filepath.Join(filepath.Dir(fileName), toName)))(t)
+
+	fromPerms := ts.NoErr(os.Stat(fileName))(t).Mode()
+	toPerms := ts.NoErr(os.Stat(filepath.Join(filepath.Dir(fileName), toName)))(t).Mode()
+	ts.Is(fromPerms)(t, toPerms)
 }
 
 func TestReflinkOrCopyOnLinuxWithinEXT4(t *testing.T) {
@@ -108,5 +128,9 @@ func TestReflinkOrCopyOnLinuxWithinEXT4(t *testing.T) {
 
 	toName := "test-reflink.txt"
 
+	fromPerms := ts.NoErr(os.Stat(fileName))(t).Mode()
+
+	toPerms := ts.NoErr(os.Stat(filepath.Join(filepath.Dir(fileName), toName)))(t).Mode()
+	ts.Is(fromPerms)(t, toPerms)
 	ts.NoErr(0, copy.Copy(fileName, filepath.Join(filepath.Dir(fileName), toName)))(t)
 }
