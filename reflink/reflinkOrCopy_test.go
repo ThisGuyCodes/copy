@@ -10,7 +10,7 @@ import (
 	"github.com/thisguycodes/copy/reflink/testutils/ts"
 )
 
-func TestReflinkOnDarwinWithinAPFS(t *testing.T) {
+func TestReflinkOrCopyOnDarwinWithinAPFS(t *testing.T) {
 	ts.OnlyOn(t, "darwin_")
 	t.Parallel()
 
@@ -28,13 +28,11 @@ func TestReflinkOnDarwinWithinAPFS(t *testing.T) {
 
 	toName := "test-reflink.txt"
 
-	toFile := ts.NoErr(reflink.Reflink(fromFD, toDirFD, toName))(t)
-	if toFile != nil {
-		defer toFile.Close() // nolint:errcheck
-	}
+	didReflink := ts.NoErr(reflink.ReflinkOrCopy(fromFD, toDirFD, toName))(t)
+	ts.Is(true)(t, didReflink)
 }
 
-func TestReflinkOnDarwinAcrossAPFS(t *testing.T) {
+func TestReflinkOrCopyOnDarwinAcrossAPFS(t *testing.T) {
 	ts.OnlyOn(t, "darwin_")
 	t.Parallel()
 
@@ -55,14 +53,11 @@ func TestReflinkOnDarwinAcrossAPFS(t *testing.T) {
 
 	toName := "test-reflink.txt"
 
-	toFile, err := reflink.Reflink(fromFD, toDirFD, toName)
-	if toFile != nil {
-		defer toFile.Close() // nolint:errcheck
-	}
-	ts.IsErr(t, err, reflink.ErrCanNotReflink{})
+	didReflink := ts.NoErr(reflink.ReflinkOrCopy(fromFD, toDirFD, toName))(t)
+	ts.Is(false)(t, didReflink)
 }
 
-func TestReflinkOnDarwinWithinExFAT(t *testing.T) {
+func TestReflinkOrCopyOnDarwinWithinExFAT(t *testing.T) {
 	ts.OnlyOn(t, "darwin_")
 	t.Parallel()
 
@@ -80,14 +75,11 @@ func TestReflinkOnDarwinWithinExFAT(t *testing.T) {
 
 	toName := "test-reflink.txt"
 
-	toFile, err := reflink.Reflink(fromFD, toDirFD, toName)
-	if toFile != nil {
-		defer toFile.Close() // nolint:errcheck
-	}
-	ts.IsErr(t, err, reflink.ErrCanNotReflink{})
+	didReflink := ts.NoErr(reflink.ReflinkOrCopy(fromFD, toDirFD, toName))(t)
+	ts.Is(false)(t, didReflink)
 }
 
-func TestReflinkOnLinuxWithinXFS(t *testing.T) {
+func TestReflinkOrCopyOnLinuxWithinXFS(t *testing.T) {
 	ts.OnlyOn(t, "linux_")
 	t.Parallel()
 
@@ -105,13 +97,11 @@ func TestReflinkOnLinuxWithinXFS(t *testing.T) {
 
 	toName := "test-reflink.txt"
 
-	toFile := ts.NoErr(reflink.Reflink(fromFD, toDirFD, toName))(t)
-	if toFile != nil {
-		defer toFile.Close() // nolint:errcheck
-	}
+	didReflink := ts.NoErr(reflink.ReflinkOrCopy(fromFD, toDirFD, toName))(t)
+	ts.Is(true)(t, didReflink)
 }
 
-func TestReflinkOnLinuxAcrossXFS(t *testing.T) {
+func TestReflinkOrCopyOnLinuxAcrossXFS(t *testing.T) {
 	ts.OnlyOn(t, "linux_")
 	t.Parallel()
 
@@ -131,14 +121,11 @@ func TestReflinkOnLinuxAcrossXFS(t *testing.T) {
 
 	toName := "test-reflink.txt"
 
-	toFile, err := reflink.Reflink(fromFD, toDirFD, toName)
-	if toFile != nil {
-		defer toFile.Close() // nolint:errcheck
-	}
-	ts.IsErr(t, err, reflink.ErrCanNotReflink{})
+	didReflink := ts.NoErr(reflink.ReflinkOrCopy(fromFD, toDirFD, toName))(t)
+	ts.Is(false)(t, didReflink)
 }
 
-func TestReflinkOnLinuxWithinEXT4(t *testing.T) {
+func TestReflinkOrCopyOnLinuxWithinEXT4(t *testing.T) {
 	ts.OnlyOn(t, "linux_")
 	t.Parallel()
 
@@ -156,9 +143,6 @@ func TestReflinkOnLinuxWithinEXT4(t *testing.T) {
 
 	toName := "test-reflink.txt"
 
-	toFile, err := reflink.Reflink(fromFD, toDirFD, toName)
-	if toFile != nil {
-		defer toFile.Close() // nolint:errcheck
-	}
-	ts.IsErr(t, err, reflink.ErrCanNotReflink{})
+	didReflink := ts.NoErr(reflink.ReflinkOrCopy(fromFD, toDirFD, toName))(t)
+	ts.Is(false)(t, didReflink)
 }

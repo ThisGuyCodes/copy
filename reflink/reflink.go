@@ -9,50 +9,46 @@ import (
 	"github.com/spf13/afero"
 )
 
-func Reflink(from *os.File, toDir *os.File, toName string) error {
+func Reflink(from *os.File, toDir *os.File, toName string) (*os.File, error) {
 	// indirection is so we can add other platform specific options later
 	err := clonefile(from, toDir, toName)
 	if err == nil || err != ErrNotOnPlatform {
-		return err
+		return nil, err
 	}
 
-	return ioctlFileClone(from, toDir, toName)
+	toFile, err := ioctlFileClone(from, toDir, toName)
+	if err == nil {
+		return nil, toFile.Close()
+	}
+	return toFile, err
 }
 
 func ReflinkOrCopy(from *os.File, toDir *os.File, toName string) (bool, error) {
-	wasReflinked := true
-	err := Reflink(from, toDir, toName)
-	if err != nil {
-		wasReflinked = false
-	}
-	if err == nil || err != ErrNotOnPlatform {
-		return wasReflinked, err
-	}
-
-	fromPerms, err := from.Stat()
-	if err != nil {
-		return wasReflinked, err
-	}
-
-	toFile, err := createFile(toDir, toName, fromPerms.Mode())
-	if err != nil {
-		return wasReflinked, err
-	}
-
-	doDeferClose := true
-	defer func() {
-		if doDeferClose {
-			toFile.Close() // nolint:errcheck
+	toFile, err := Reflink(from, toDir, toName)
+	if err != nil && toFile == nil {
+		perms, err := from.Stat()
+		if err != nil {
+			return false, err
 		}
-	}()
+		toFile, err = createFile(toDir, toName, perms.Mode())
+		if err != nil {
+			return false, err
+		}
+	}
+
+	if err == nil {
+		return true, nil
+	}
+	if !errors.Is(err, ErrNotOnPlatform) && !errors.Is(err, ErrCanNotReflink{}) {
+		return false, errors.Join(err, toFile.Close())
+	}
 
 	// on linux Go automatically uses copy_file_range, which internally will
 	// use reflink if the file system supports it
 	_, copyErr := io.Copy(toFile, from)
-	doDeferClose = false
 	closeErr := toFile.Close()
 
-	return wasReflinked, errors.Join(copyErr, closeErr)
+	return false, errors.Join(copyErr, closeErr)
 }
 
 func ReflinkOrCopyAfero(fs afero.Fs, from, to string) (wasReflinked bool, joinErr error) {

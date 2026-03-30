@@ -12,7 +12,7 @@ import (
 func clonefile(from *os.File, toDir *os.File, toName string) error {
 	fromFD := int(from.Fd())
 	toDirFD := int(toDir.Fd())
-	err := unix.Fclonefileat(fromFD, toDirFD, toName, unix.CLONE_NOFOLLOW|unix.CLONE_NOOWNERCOPY)
+	err := unix.Fclonefileat(fromFD, toDirFD, toName, unix.CLONE_NOFOLLOW)
 
 	if err, ok := err.(syscall.Errno); ok {
 		if clonefileNonRetryableErrors[err] {
