@@ -21,6 +21,16 @@ func Reflink(from *os.File, toDir *os.File, toName string) (*os.File, error) {
 
 func ReflinkOrCopy(from *os.File, toDir *os.File, toName string) (bool, error) {
 	toFile, err := Reflink(from, toDir, toName)
+	if toFile == nil {
+		perms, err := from.Stat()
+		if err != nil {
+			return false, err
+		}
+		toFile, err = createFile(toDir, toName, perms.Mode())
+		if err != nil {
+			return false, err
+		}
+	}
 
 	if err == nil {
 		return true, toFile.Close()
