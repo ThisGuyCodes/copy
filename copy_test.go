@@ -10,7 +10,7 @@ import (
 	"github.com/thisguycodes/copy/reflink/testutils/ts"
 )
 
-func TestReflinkOrCopyOnDarwinWithinAPFS(t *testing.T) {
+func TestCopyOnDarwinWithinAPFS(t *testing.T) {
 	ts.OnlyOn(t, "darwin_")
 	t.Parallel()
 
@@ -24,9 +24,13 @@ func TestReflinkOrCopyOnDarwinWithinAPFS(t *testing.T) {
 	toName := "test-reflink.txt"
 
 	ts.NoErr(0, copy.Copy(fileName, filepath.Join(filepath.Dir(fileName), toName)))(t)
+
+	fromPerms := ts.NoErr(os.Stat(fileName))(t).Mode()
+	toPerms := ts.NoErr(os.Stat(filepath.Join(filepath.Dir(fileName), toName)))(t).Mode()
+	ts.Is(fromPerms)(t, toPerms)
 }
 
-func TestReflinkOrCopyOnDarwinAcrossAPFS(t *testing.T) {
+func TestCopyOnDarwinAcrossAPFS(t *testing.T) {
 	ts.OnlyOn(t, "darwin_")
 	t.Parallel()
 
@@ -43,9 +47,13 @@ func TestReflinkOrCopyOnDarwinAcrossAPFS(t *testing.T) {
 	toName := "test-reflink.txt"
 
 	ts.NoErr(0, copy.Copy(fileName, filepath.Join(filepath.Dir(fileName), toName)))(t)
+
+	fromPerms := ts.NoErr(os.Stat(fileName))(t).Mode()
+	toPerms := ts.NoErr(os.Stat(filepath.Join(filepath.Dir(fileName), toName)))(t).Mode()
+	ts.Is(fromPerms)(t, toPerms)
 }
 
-func TestReflinkOrCopyOnDarwinWithinExFAT(t *testing.T) {
+func TestCopyOnDarwinWithinExFAT(t *testing.T) {
 	ts.OnlyOn(t, "darwin_")
 	t.Parallel()
 
@@ -59,9 +67,13 @@ func TestReflinkOrCopyOnDarwinWithinExFAT(t *testing.T) {
 	toName := "test-reflink.txt"
 
 	ts.NoErr(0, copy.Copy(fileName, filepath.Join(filepath.Dir(fileName), toName)))(t)
+
+	fromPerms := ts.NoErr(os.Stat(fileName))(t).Mode()
+	toPerms := ts.NoErr(os.Stat(filepath.Join(filepath.Dir(fileName), toName)))(t).Mode()
+	ts.Is(fromPerms)(t, toPerms)
 }
 
-func TestReflinkOrCopyOnLinuxWithinXFS(t *testing.T) {
+func TestCopyOnLinuxWithinXFS(t *testing.T) {
 	ts.OnlyOn(t, "linux_")
 	t.Parallel()
 
@@ -75,9 +87,13 @@ func TestReflinkOrCopyOnLinuxWithinXFS(t *testing.T) {
 	toName := "test-reflink.txt"
 
 	ts.NoErr(0, copy.Copy(fileName, filepath.Join(filepath.Dir(fileName), toName)))(t)
+
+	fromPerms := ts.NoErr(os.Stat(fileName))(t).Mode()
+	toPerms := ts.NoErr(os.Stat(filepath.Join(filepath.Dir(fileName), toName)))(t).Mode()
+	ts.Is(fromPerms)(t, toPerms)
 }
 
-func TestReflinkOrCopyOnLinuxAcrossXFS(t *testing.T) {
+func TestCopyOnLinuxAcrossXFS(t *testing.T) {
 	ts.OnlyOn(t, "linux_")
 	t.Parallel()
 
@@ -93,9 +109,13 @@ func TestReflinkOrCopyOnLinuxAcrossXFS(t *testing.T) {
 	toName := "test-reflink.txt"
 
 	ts.NoErr(0, copy.Copy(fileName, filepath.Join(filepath.Dir(fileName), toName)))(t)
+
+	fromPerms := ts.NoErr(os.Stat(fileName))(t).Mode()
+	toPerms := ts.NoErr(os.Stat(filepath.Join(filepath.Dir(fileName), toName)))(t).Mode()
+	ts.Is(fromPerms)(t, toPerms)
 }
 
-func TestReflinkOrCopyOnLinuxWithinEXT4(t *testing.T) {
+func TestCopyOnLinuxWithinEXT4(t *testing.T) {
 	ts.OnlyOn(t, "linux_")
 	t.Parallel()
 
@@ -108,5 +128,10 @@ func TestReflinkOrCopyOnLinuxWithinEXT4(t *testing.T) {
 
 	toName := "test-reflink.txt"
 
-	ts.NoErr(0, copy.Copy(fileName, filepath.Join(filepath.Dir(fileName), toName)))(t)
+	ts.NoErr(0, copy.Copy(fileName, filepath.Join(ext4Mount, toName)))(t)
+
+	fromPerms := ts.NoErr(os.Stat(fileName))(t).Mode()
+
+	toPerms := ts.NoErr(os.Stat(filepath.Join(ext4Mount, toName)))(t).Mode()
+	ts.Is(fromPerms)(t, toPerms)
 }
