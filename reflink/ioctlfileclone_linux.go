@@ -29,11 +29,8 @@ func ioctlFileClone(from *os.File, toDir *os.File, toName string) (*os.File, err
 			return toFile, ErrCanNotReflink{wrapped: err}
 		}
 	}
-	if err != nil {
-		return toFile, err
-	}
 
-	return nil, toFile.Close()
+	return toFile, err
 }
 
 var ioctlFileCloneNonRetryableErrors = map[syscall.Errno]bool{
