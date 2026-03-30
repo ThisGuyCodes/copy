@@ -3,6 +3,9 @@ run-name: ci (${{ github.event_name }})
 on:
   pull_request:
   workflow_call:
+  push:
+    branches:
+      - main
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true

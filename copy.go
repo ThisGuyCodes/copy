@@ -1,3 +1,4 @@
+// Package copy provides functions for copying files, while opportunistically using features like reflinks.
 package copy
 
 import (
