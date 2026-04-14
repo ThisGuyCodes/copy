@@ -26,7 +26,7 @@ jobs:
       COVERAGE_FILE: /tmp/coverage-${{ matrix.go-version }}-${{ matrix.os }}.out
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd #v6
-      - uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 #v6
+      - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c #v6
         with:
           go-version: ${{ matrix.go-version }}
       - name: Setup tmate session
@@ -55,7 +55,7 @@ jobs:
     outputs:
       report-bundle: ${{ steps.report-bundle.outputs.artifact-id }}
     steps:
-      - uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 #v6
+      - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c #v6
         with:
           go-version: ${{ inputs.current-go-version }}
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8
