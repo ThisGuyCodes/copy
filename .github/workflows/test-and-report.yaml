@@ -26,14 +26,14 @@ jobs:
       COVERAGE_FILE: /tmp/coverage-${{ matrix.go-version }}-${{ matrix.os }}.out
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd #v6
-      - uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 #v6
+      - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c #v6
         with:
           go-version: ${{ matrix.go-version }}
       - name: Setup tmate session
         if: ${{ runner.debug == '1' }}
         uses: mxschmitt/action-tmate@c0afd6f790e3a5564914980036ebf83216678101 #v3
       - run: go test -coverprofile=${{ toJson(env.COVERAGE_FILE) }} -v -json ./... | tee ${{ toJson(env.REPORT_FILE) }}
-      - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f #v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a #v7
         if: ${{ !cancelled() }}
         name: coverage
         with:
@@ -41,7 +41,7 @@ jobs:
           path: ${{ env.COVERAGE_FILE }}
           compression-level: 3
           overwrite: true
-      - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f #v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a #v7
         if: ${{ !cancelled() }}
         name: testreport
         with:
@@ -55,7 +55,7 @@ jobs:
     outputs:
       report-bundle: ${{ steps.report-bundle.outputs.artifact-id }}
     steps:
-      - uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 #v6
+      - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c #v6
         with:
           go-version: ${{ inputs.current-go-version }}
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8
@@ -71,7 +71,7 @@ jobs:
             name=$(basename "$file")
             gotestsum --junitfile /tmp/"$name".xml --raw-command cat "$file"
           done
-      - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f #v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a #v7
         id: report-bundle
         with:
           name: report-bundle
@@ -105,7 +105,7 @@ jobs:
     needs: present-reports
     if: ${{ !cancelled() }}
     steps:
-      - uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd #v8
+      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 #v9.0.0
         with:
           script: |
             const owner = context.repo.owner;
